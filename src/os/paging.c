@@ -24,7 +24,15 @@ bool pageTablePresent(PageDirectoryEntry tableEntry) {
 
 bool pageEntryPresent(PageTableEntry entry) { return entry & ENTRY_PRESENT; }
 
-void setActiveDirectory(PageDirectory *dir) {
+void setEntryAddr(PageTableEntry* entry, void* addr) {
+    if (entry == NULL)
+        return;
+
+    *entry = ((uint32_t)(addr) & ENTRY_ADDR) | (*entry & ~(ENTRY_ADDR));
+}
+
+
+void setActivePageDir(PageDirectory *dir) {
     if (dir == NULL)
         dir = idendirectory;
 
@@ -39,7 +47,7 @@ PageDirectory *getActivePageDir(void) {
     return dir;
 }
 
-void resetTLB(void) { setActiveDirectory(getActivePageDir()); }
+void resetTLB(void) { setActivePageDir(getActivePageDir()); }
 
 
 #define PAGE_TABLE_OFFSET 22
@@ -56,11 +64,21 @@ uint16_t vaddrEntryIdx(void *vaddr) {
 }
 
 // low 12 bits
-uint32_t vaddrOffset(void* vaddr) {
+uint16_t vaddrOffset(void* vaddr) {
     return (uint32_t)(vaddr) & 0xfff;
 }
 
+void* toVaddr(uint16_t dirIdx, uint16_t entryIdx, uint16_t offset) {
+    uint32_t vaddr = offset;
+    vaddr |= (uint32_t)(entryIdx) << PAGE_ENTRY_OFFSET;
+    vaddr |= (uint32_t)(dirIdx) << PAGE_TABLE_OFFSET;
+    return (void*)(vaddr);
+}
+
 PageDirectoryEntry* vaddrDirEntry(PageDirectory* directory, void *vaddr) {
+    if (directory == NULL)
+        directory = getActivePageDir();
+
     uint16_t tableidx = vaddrDirectoryIdx(vaddr);
     return &directory->entries[tableidx];
 }
@@ -77,9 +95,10 @@ PageTableEntry* vaddrTableEntry(PageDirectory* directory, void *vaddr) {
     return &table->entries[entryidx];
 }
 
-void *vaddrToPaddr(void *vaddr) {
+void *vaddrToPaddr(PageDirectory *dir, void *vaddr) {
 
-    PageDirectory *dir = getActivePageDir();
+    if (dir == NULL)
+        dir = getActivePageDir();
 
     // get and verify page entry
     PageTableEntry* entry = vaddrTableEntry(dir, vaddr);
@@ -128,7 +147,7 @@ void initPaging(void) {
         identityMapTable(idendirectory, idx, DEFAULT_ENTRY_FLAGS);
     }
 
-    setActiveDirectory(idendirectory);
+    setActivePageDir(idendirectory);
 
     // enable paging flags in cr0
     __asm__ volatile("mov eax, cr0\n\t"

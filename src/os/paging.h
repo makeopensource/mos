@@ -49,6 +49,11 @@ typedef struct {
 bool pageTablePresent(PageDirectoryEntry tableEntry);
 bool pageEntryPresent(PageTableEntry entry);
 
+// sets the entry's physical page to that of addr
+void setEntryAddr(PageTableEntry* entry, void* addr);
+
+// NOTE: IF PageDirectory* IS NULL IT USES THE CURRENT DIRECTORY (unless otherwise specified)
+
 // sets the active page directory, if NULL uses the identity directory
 void setActivePageDir(PageDirectory *dir);
 
@@ -67,7 +72,10 @@ void addTableToDirectory(PageDirectory* directory, uint16_t idx, PageTable *tabl
 // translation helpers
 uint16_t vaddrDirectoryIdx(void *vaddr);
 uint16_t vaddrEntryIdx(void *vaddr);
-uint32_t vaddrOffset(void* vaddr);
+uint16_t vaddrOffset(void* vaddr);
+
+// translates table indexes and offset to virtual address
+void* toVaddr(uint16_t dirIdx, uint16_t tableIdx, uint16_t offset);
 
 // returns the associated directory entry of vaddr, never null
 PageDirectoryEntry* vaddrDirEntry(PageDirectory* directory, void *vaddr);
@@ -75,12 +83,15 @@ PageDirectoryEntry* vaddrDirEntry(PageDirectory* directory, void *vaddr);
 // returns the associated table entry of vaddr, null if invalid/unmapped address
 PageTableEntry* vaddrTableEntry(PageDirectory* directory, void* vaddr);
 
+// identity maps the PageTable at directory index idx
+void identityMapTable(PageDirectory* directory, uint16_t idx, uint32_t flags);
+
 /*
  * Converts virtual address to physical address
  * (according to the current page table/directory)
  * returns NULL when the address is invalid/unmapped
  */
-void *vaddrToPaddr(void *vaddr);
+void *vaddrToPaddr(PageDirectory *dir, void *vaddr);
 
 /*
  * enables paging and identity maps the kernel (1st MiB)
