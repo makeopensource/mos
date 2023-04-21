@@ -1,11 +1,13 @@
 #include "device/serial.h"
 #include "hard/idt.h"
+#include "paging.h"
 #include "pit/pit.h"
 #include "test.h"
 #include "video/VGA_text.h"
 
 int os_main() {
     makeInterruptTable();
+    initPaging();
     init_pit();
     serialInit();
     clearScreen(black);
