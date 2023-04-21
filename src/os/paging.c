@@ -9,14 +9,14 @@
  * (We technically have until 0x9fc00 before we enter ExBIOS data)
  */
 
-#define PAGE_DIRECTORY_BASE 0x91000
+#define ID_PAGE_DIRECTORY_BASE 0x91000
 
 // room for 3 page tables (12 MiB of mapped memory)
-#define KERNEL_PT_BASE 0x92000
+#define IDENTITY_PT_BASE 0x92000
 #define IDENTITY_PT_LIMIT 0x95000
-#define TABLE_COUNT ((IDENTITY_PT_LIMIT - KERNEL_PT_BASE) / 0x1000)
+#define TABLE_COUNT ((IDENTITY_PT_LIMIT -  IDENTITY_PT_BASE) / 0x1000)
 
-PageDirectory *directory = (PageDirectory *)(PAGE_DIRECTORY_BASE);
+PageDirectory *idendirectory = (PageDirectory *)(ID_PAGE_DIRECTORY_BASE);
 
 bool pageTablePresent(PageDirectoryEntry tableEntry) {
     return tableEntry & ENTRY_PRESENT;
@@ -26,7 +26,7 @@ bool pageEntryPresent(PageTableEntry entry) { return entry & ENTRY_PRESENT; }
 
 void setActiveDirectory(PageDirectory *dir) {
     if (dir == NULL)
-        dir = directory;
+        dir = idendirectory;
 
     __asm__ volatile("mov cr3, %0" : : "a"(dir));
 }
@@ -41,21 +41,32 @@ PageDirectory *getActivePageDir(void) {
 
 void resetTLB(void) { setActiveDirectory(getActivePageDir()); }
 
+
 #define PAGE_TABLE_OFFSET 22
 #define PAGE_ENTRY_OFFSET 12
+
+// highest 10 bits
+uint16_t vaddrDirectoryIdx(void *vaddr) {
+    return (uint32_t)(vaddr) >> PAGE_TABLE_OFFSET;
+}
+
+// middle 10 bits
+uint16_t vaddrEntryIdx(void *vaddr) {
+    return ((uint32_t)(vaddr) >> PAGE_ENTRY_OFFSET) & 0b1111111111;
+}
+
+// low 12 bits
+uint32_t vaddrOffset(void* vaddr) {
+    return (uint32_t)(vaddr) & 0xfff;
+}
 
 void *vaddrToPaddr(void *vaddr) {
 
     PageDirectory *dir = getActivePageDir();
 
-    // 10 bits of table (2^10 = 1024)
-    uint16_t tableidx = (uint32_t)(vaddr) >> PAGE_TABLE_OFFSET;
-
-    // there are 10 bits of entry
-    uint16_t entryidx = ((uint32_t)(vaddr) >> PAGE_ENTRY_OFFSET) & 0b1111111111;
-
-    // 12 bits of offset
-    uint32_t paddr = (uint32_t)(vaddr)&0xfff;
+    uint16_t tableidx = vaddrDirectoryIdx(vaddr);
+    uint16_t entryidx = vaddrEntryIdx(vaddr);
+    uint32_t paddr = vaddrOffset(vaddr);
 
     // get and verify page table
     PageDirectoryEntry tableEntry = dir->entries[tableidx];
@@ -73,8 +84,8 @@ void *vaddrToPaddr(void *vaddr) {
     return (void *)(paddr + (entry & ENTRY_ADDR));
 }
 
-// identity maps the table at directory entry idx
-void identityMapTable(uint16_t idx, uint32_t flags) {
+// identity maps the entire table at directory entry idx
+void identityMapTable(PageDirectory* directory, uint16_t idx, uint32_t flags) {
     PageTable *table = (PageTable *)(directory->entries[idx] & ENTRY_ADDR);
 
     // 4GiB per directory
@@ -85,13 +96,13 @@ void identityMapTable(uint16_t idx, uint32_t flags) {
         PageTableEntry entry = flags & ~(ENTRY_ADDR);
 
         // 4KiB per entry
-        entry |= (baseAddr + page_idx * 0x1000) & ENTRY_ADDR;
+        entry |= (baseAddr + page_idx * PAGE_SIZE) & ENTRY_ADDR;
         table->entries[page_idx] = entry;
     }
 }
 
 // preconditions, idx < PAGE_ENTRY_COUNT, table is 4KiB aligned
-void addDirectoryEntry(uint16_t idx, PageTable *table, uint32_t flags) {
+void addTableToDirectory(PageDirectory* directory, uint16_t idx, PageTable *table, uint32_t flags) {
     PageDirectoryEntry entry = flags & ~(ENTRY_ADDR);
     entry |= (uint32_t)(table)&ENTRY_ADDR;
     directory->entries[idx] = entry;
@@ -99,16 +110,17 @@ void addDirectoryEntry(uint16_t idx, PageTable *table, uint32_t flags) {
 
 void initPaging(void) {
     // clear the memory (essentially say no page tables exist)
-    memset(directory, 0, PAGE_ENTRY_COUNT * sizeof(PageDirectoryEntry));
+    memset(idendirectory, 0, PAGE_ENTRY_COUNT * sizeof(PageDirectoryEntry));
 
     // identity map 12MiB and setup directory
     for (uint16_t idx = 0; idx < TABLE_COUNT; ++idx) {
-        PageTable *addr = (PageTable *)((idx * 0x1000) + KERNEL_PT_BASE);
-        addDirectoryEntry(idx, addr, DEFAULT_ENTRY_FLAGS);
-        identityMapTable(idx, DEFAULT_ENTRY_FLAGS);
+        PageTable *addr = (PageTable *)((idx * PAGE_SIZE) + IDENTITY_PT_BASE);
+        memset(addr, 0, PAGE_ENTRY_COUNT * sizeof(PageTableEntry));
+        addTableToDirectory(idendirectory, idx, addr, DEFAULT_ENTRY_FLAGS);
+        identityMapTable(idendirectory, idx, DEFAULT_ENTRY_FLAGS);
     }
 
-    setActiveDirectory(directory);
+    setActiveDirectory(idendirectory);
 
     // enable paging flags in cr0
     __asm__ volatile("mov eax, cr0\n\t"

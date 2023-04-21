@@ -9,6 +9,7 @@ typedef uint32_t PageDirectoryEntry;
 typedef uint32_t PageTableEntry;
 
 #define PAGE_ENTRY_COUNT 1024
+#define PAGE_SIZE 0x1000
 
 // The entries share flags!
 #define ENTRY_PRESENT 0b000000001
@@ -58,6 +59,14 @@ PageDirectory *getActivePageDir(void);
  *  the TLB needs to be reset whenever an entry is modified
  */
 void resetTLB(void);
+
+// adds a table to a directory, TLB must be reset manually if directory is the current page directory
+void addTableToDirectory(PageDirectory* directory, uint16_t idx, PageTable *table, uint32_t flags);
+
+// translation helpers
+uint16_t vaddrDirectoryIdx(void *vaddr);
+uint16_t vaddrEntryIdx(void *vaddr);
+uint32_t vaddrOffset(void* vaddr);
 
 /*
  * Converts virtual address to physical address
