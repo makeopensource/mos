@@ -11,15 +11,15 @@
 // placed so that the test goes over the table 0 and table 1 boundary
 #define IDENT_LOCATION ((MiB1 * 4) - PAGE_SIZE)
 
-void assert_identity(PageDirectory* dir, void* addr) {
+void assert_identity(PageDirectory *dir, void *addr) {
     ASSERT(vaddrToPaddr(dir, addr) == addr);
 }
 
-void test_identity(PageDirectory* idDir) {
+void test_identity(PageDirectory *idDir) {
 
     // test 2 whole pages (and first byte of 3rd)
     for (int i = 0; i <= PAGE_SIZE * 2; ++i) {
-        assert_identity(idDir, (void*)(IDENT_LOCATION + i));
+        assert_identity(idDir, (void *)(IDENT_LOCATION + i));
     }
 
     char done[] = "test_identity done\n";
@@ -27,9 +27,9 @@ void test_identity(PageDirectory* idDir) {
 }
 
 void assert_compose(uint16_t didx, uint16_t tidx, uint16_t off) {
-    void* addr = toVaddr(didx, tidx, off);
+    void *addr = toVaddr(didx, tidx, off);
 
-    ASSERT(addr == (void*)((didx * 0x400000) + (tidx * 0x1000) + off));
+    ASSERT(addr == (void *)((didx * 0x400000) + (tidx * 0x1000) + off));
 
     ASSERT(vaddrOffset(addr) == off);
     ASSERT(vaddrEntryIdx(addr) == tidx);
@@ -49,12 +49,12 @@ void test_composition(void) {
     serialWrite(COM1, (uint8_t *)(done), sizeof(done) - 1);
 }
 
-#define BOUND ((void*)(MiB1 * 4))
+#define BOUND ((void *)(MiB1 * 4))
 
 void test_swap_page(PageDirectory *base) {
     // steal the 3MiB page and 3 more
-    PageDirectory* newDir = (PageDirectory*)(MiB3);
-    PageTable* tables = (PageTable*)(MiB3 + sizeof(PageDirectory));
+    PageDirectory *newDir = (PageDirectory *)(MiB3);
+    PageTable *tables = (PageTable *)(MiB3 + sizeof(PageDirectory));
 
     // setup identity paged dir
     addTableToDirectory(newDir, 0, tables, DEFAULT_ENTRY_FLAGS);
@@ -66,8 +66,8 @@ void test_swap_page(PageDirectory *base) {
     identityMapTable(newDir, 2, DEFAULT_ENTRY_FLAGS);
 
     // first and second entry of page table at index 1
-    PageTableEntry* entry1 = vaddrTableEntry(newDir, BOUND);
-    PageTableEntry* entry2 = vaddrTableEntry(newDir, BOUND + PAGE_SIZE);
+    PageTableEntry *entry1 = vaddrTableEntry(newDir, BOUND);
+    PageTableEntry *entry2 = vaddrTableEntry(newDir, BOUND + PAGE_SIZE);
     ASSERT(entry1 == &tables[1].entries[0]);
     ASSERT(entry2 == &tables[1].entries[1]);
 
@@ -77,8 +77,8 @@ void test_swap_page(PageDirectory *base) {
     ASSERT(vaddrToPaddr(newDir, BOUND) == BOUND + PAGE_SIZE);
     ASSERT(vaddrToPaddr(newDir, BOUND + PAGE_SIZE) == BOUND);
 
-    uint32_t* magicLocation = (uint32_t*)(BOUND);
-    uint32_t* boringLocation = (uint32_t*)(BOUND + PAGE_SIZE);
+    uint32_t *magicLocation = (uint32_t *)(BOUND);
+    uint32_t *boringLocation = (uint32_t *)(BOUND + PAGE_SIZE);
 
     // setup data
     magicLocation[0] = 0xdeadbeef;
@@ -99,7 +99,7 @@ void test_swap_page(PageDirectory *base) {
     // they swapped!!!
     ASSERT(magicLocation[0] == 0xc0decafe);
     ASSERT(boringLocation[0] == 0xdeadbeef);
-   
+
     char done[] = "test_swap done\n";
     serialWrite(COM1, (uint8_t *)(done), sizeof(done) - 1);
 }
@@ -107,11 +107,10 @@ void test_swap_page(PageDirectory *base) {
 void test_main() {
     test_composition();
 
-    PageDirectory* idDir = getActivePageDir();
+    PageDirectory *idDir = getActivePageDir();
     ASSERT(idDir != NULL);
 
     test_identity(idDir);
 
     test_swap_page(idDir);
-    
 }

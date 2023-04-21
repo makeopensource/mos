@@ -14,7 +14,7 @@
 // room for 3 page tables (12 MiB of mapped memory)
 #define IDENTITY_PT_BASE 0x92000
 #define IDENTITY_PT_LIMIT 0x95000
-#define TABLE_COUNT ((IDENTITY_PT_LIMIT -  IDENTITY_PT_BASE) / 0x1000)
+#define TABLE_COUNT ((IDENTITY_PT_LIMIT - IDENTITY_PT_BASE) / 0x1000)
 
 PageDirectory *idendirectory = (PageDirectory *)(ID_PAGE_DIRECTORY_BASE);
 
@@ -24,13 +24,12 @@ bool pageTablePresent(PageDirectoryEntry tableEntry) {
 
 bool pageEntryPresent(PageTableEntry entry) { return entry & ENTRY_PRESENT; }
 
-void setEntryAddr(PageTableEntry* entry, void* addr) {
+void setEntryAddr(PageTableEntry *entry, void *addr) {
     if (entry == NULL)
         return;
 
-    *entry = ((uint32_t)(addr) & ENTRY_ADDR) | (*entry & ~(ENTRY_ADDR));
+    *entry = ((uint32_t)(addr)&ENTRY_ADDR) | (*entry & ~(ENTRY_ADDR));
 }
-
 
 void setActivePageDir(PageDirectory *dir) {
     if (dir == NULL)
@@ -49,7 +48,6 @@ PageDirectory *getActivePageDir(void) {
 
 void resetTLB(void) { setActivePageDir(getActivePageDir()); }
 
-
 #define PAGE_TABLE_OFFSET 22
 #define PAGE_ENTRY_OFFSET 12
 
@@ -64,18 +62,16 @@ uint16_t vaddrEntryIdx(void *vaddr) {
 }
 
 // low 12 bits
-uint16_t vaddrOffset(void* vaddr) {
-    return (uint32_t)(vaddr) & 0xfff;
-}
+uint16_t vaddrOffset(void *vaddr) { return (uint32_t)(vaddr)&0xfff; }
 
-void* toVaddr(uint16_t dirIdx, uint16_t entryIdx, uint16_t offset) {
+void *toVaddr(uint16_t dirIdx, uint16_t entryIdx, uint16_t offset) {
     uint32_t vaddr = offset;
     vaddr |= (uint32_t)(entryIdx) << PAGE_ENTRY_OFFSET;
     vaddr |= (uint32_t)(dirIdx) << PAGE_TABLE_OFFSET;
-    return (void*)(vaddr);
+    return (void *)(vaddr);
 }
 
-PageDirectoryEntry* vaddrDirEntry(PageDirectory* directory, void *vaddr) {
+PageDirectoryEntry *vaddrDirEntry(PageDirectory *directory, void *vaddr) {
     if (directory == NULL)
         directory = getActivePageDir();
 
@@ -83,12 +79,12 @@ PageDirectoryEntry* vaddrDirEntry(PageDirectory* directory, void *vaddr) {
     return &directory->entries[tableidx];
 }
 
-PageTableEntry* vaddrTableEntry(PageDirectory* directory, void *vaddr) {
+PageTableEntry *vaddrTableEntry(PageDirectory *directory, void *vaddr) {
     // this will never be null (unless something really bad happened)
-    PageDirectoryEntry* dirEntry = vaddrDirEntry(directory, vaddr);
-    PageTable* table = (PageTable*)((*dirEntry) & ENTRY_ADDR);
+    PageDirectoryEntry *dirEntry = vaddrDirEntry(directory, vaddr);
+    PageTable *table = (PageTable *)((*dirEntry) & ENTRY_ADDR);
 
-    if (table == NULL) 
+    if (table == NULL)
         return NULL;
 
     uint16_t entryidx = vaddrEntryIdx(vaddr);
@@ -101,7 +97,7 @@ void *vaddrToPaddr(PageDirectory *dir, void *vaddr) {
         dir = getActivePageDir();
 
     // get and verify page entry
-    PageTableEntry* entry = vaddrTableEntry(dir, vaddr);
+    PageTableEntry *entry = vaddrTableEntry(dir, vaddr);
     if (entry == NULL)
         return NULL;
 
@@ -112,7 +108,7 @@ void *vaddrToPaddr(PageDirectory *dir, void *vaddr) {
 }
 
 // identity maps the entire table at directory entry idx
-void identityMapTable(PageDirectory* directory, uint16_t idx, uint32_t flags) {
+void identityMapTable(PageDirectory *directory, uint16_t idx, uint32_t flags) {
     PageTable *table = (PageTable *)(directory->entries[idx] & ENTRY_ADDR);
 
     // 4GiB per directory
@@ -129,7 +125,8 @@ void identityMapTable(PageDirectory* directory, uint16_t idx, uint32_t flags) {
 }
 
 // preconditions, idx < PAGE_ENTRY_COUNT, table is 4KiB aligned
-void addTableToDirectory(PageDirectory* directory, uint16_t idx, PageTable *table, uint32_t flags) {
+void addTableToDirectory(PageDirectory *directory, uint16_t idx,
+                         PageTable *table, uint32_t flags) {
     PageDirectoryEntry entry = flags & ~(ENTRY_ADDR);
     entry |= (uint32_t)(table)&ENTRY_ADDR;
     directory->entries[idx] = entry;
