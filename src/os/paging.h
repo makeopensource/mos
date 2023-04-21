@@ -36,14 +36,15 @@ typedef uint32_t PageTableEntry;
 // supervisor
 #define DEFAULT_ENTRY_FLAGS (ENTRY_PRESENT | ENTRY_RW | ENTRY_US)
 
+// note: these structures are lacking attrib packed
 typedef struct {
     PageDirectoryEntry entries[PAGE_ENTRY_COUNT];
-} __attribute__((packed)) PageDirectory;
+} PageDirectory;
 
 // note, this structure must be 4KiB aligned
 typedef struct {
     PageTableEntry entries[PAGE_ENTRY_COUNT];
-} __attribute__((packed)) PageTable;
+} PageTable;
 
 bool pageTablePresent(PageDirectoryEntry tableEntry);
 bool pageEntryPresent(PageTableEntry entry);
@@ -68,10 +69,16 @@ uint16_t vaddrDirectoryIdx(void *vaddr);
 uint16_t vaddrEntryIdx(void *vaddr);
 uint32_t vaddrOffset(void* vaddr);
 
+// returns the associated directory entry of vaddr, never null
+PageDirectoryEntry* vaddrDirEntry(PageDirectory* directory, void *vaddr);
+
+// returns the associated table entry of vaddr, null if invalid/unmapped address
+PageTableEntry* vaddrTableEntry(PageDirectory* directory, void* vaddr);
+
 /*
  * Converts virtual address to physical address
  * (according to the current page table/directory)
- * returns NULL when the address isn't present
+ * returns NULL when the address is invalid/unmapped
  */
 void *vaddrToPaddr(void *vaddr);
 

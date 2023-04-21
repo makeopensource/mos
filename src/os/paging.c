@@ -60,28 +60,36 @@ uint32_t vaddrOffset(void* vaddr) {
     return (uint32_t)(vaddr) & 0xfff;
 }
 
+PageDirectoryEntry* vaddrDirEntry(PageDirectory* directory, void *vaddr) {
+    uint16_t tableidx = vaddrDirectoryIdx(vaddr);
+    return &directory->entries[tableidx];
+}
+
+PageTableEntry* vaddrTableEntry(PageDirectory* directory, void *vaddr) {
+    // this will never be null (unless something really bad happened)
+    PageDirectoryEntry* dirEntry = vaddrDirEntry(directory, vaddr);
+    PageTable* table = (PageTable*)((*dirEntry) & ENTRY_ADDR);
+
+    if (table == NULL) 
+        return NULL;
+
+    uint16_t entryidx = vaddrEntryIdx(vaddr);
+    return &table->entries[entryidx];
+}
+
 void *vaddrToPaddr(void *vaddr) {
 
     PageDirectory *dir = getActivePageDir();
 
-    uint16_t tableidx = vaddrDirectoryIdx(vaddr);
-    uint16_t entryidx = vaddrEntryIdx(vaddr);
+    // get and verify page entry
+    PageTableEntry* entry = vaddrTableEntry(dir, vaddr);
+    if (entry == NULL)
+        return NULL;
+
     uint32_t paddr = vaddrOffset(vaddr);
 
-    // get and verify page table
-    PageDirectoryEntry tableEntry = dir->entries[tableidx];
-    if (!pageTablePresent(tableEntry))
-        return NULL;
-
-    PageTable *table = (PageTable *)(tableEntry & ENTRY_ADDR);
-
-    // get and verify page entry
-    PageTableEntry entry = table->entries[entryidx];
-    if (!pageEntryPresent(entry))
-        return NULL;
-
-    // add offset
-    return (void *)(paddr + (entry & ENTRY_ADDR));
+    // apply offset
+    return (void *)(paddr + ((*entry) & ENTRY_ADDR));
 }
 
 // identity maps the entire table at directory entry idx
