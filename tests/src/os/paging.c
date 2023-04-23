@@ -104,7 +104,7 @@ void test_swap_page(PageDirectory *base) {
     serialWrite(COM1, (uint8_t *)(done), sizeof(done) - 1);
 }
 
-void test_modify_in_place(PageDirectory* base) {
+void test_modify_in_place(PageDirectory *base) {
     // steal the 3MiB page and 3 more
     PageDirectory *newDir = (PageDirectory *)(MiB3);
     PageTable *tables = (PageTable *)(MiB3 + sizeof(PageDirectory));
@@ -126,13 +126,14 @@ void test_modify_in_place(PageDirectory* base) {
     ASSERT(entry1 == &tables[1].entries[0]);
     ASSERT(entry2 == &tables[1].entries[1]);
 
-    // volatile is extremely important here, or else gcc will optimize our tests to fail
+    // volatile is extremely important here, or else gcc will optimize our tests
+    // to fail
     volatile uint32_t *baseLocation = (uint32_t *)(BOUND);
     volatile uint32_t *magicLocation = (uint32_t *)(BOUND + PAGE_SIZE);
 
     // setup values
     *baseLocation = 0xdeadbeef;
-    *magicLocation = 123; 
+    *magicLocation = 123;
     ASSERT(*baseLocation == 0xdeadbeef);
     ASSERT(*magicLocation == 123);
 
