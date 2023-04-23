@@ -24,7 +24,7 @@ bool pageTablePresent(PageDirectoryEntry tableEntry) {
 
 bool pageEntryPresent(PageTableEntry entry) { return entry & ENTRY_PRESENT; }
 
-void setEntryAddr(PageTableEntry *entry, void *addr) {
+void setEntryAddr(PageTableEntry *entry, const void *addr) {
     if (entry == NULL)
         return;
 
@@ -52,17 +52,17 @@ void resetTLB(void) { setActivePageDir(getActivePageDir()); }
 #define PAGE_ENTRY_OFFSET 12
 
 // highest 10 bits
-uint16_t vaddrDirectoryIdx(void *vaddr) {
+uint16_t vaddrDirectoryIdx(const void *vaddr) {
     return (uint32_t)(vaddr) >> PAGE_TABLE_OFFSET;
 }
 
 // middle 10 bits
-uint16_t vaddrEntryIdx(void *vaddr) {
+uint16_t vaddrEntryIdx(const void *vaddr) {
     return ((uint32_t)(vaddr) >> PAGE_ENTRY_OFFSET) & 0b1111111111;
 }
 
 // low 12 bits
-uint16_t vaddrOffset(void *vaddr) { return (uint32_t)(vaddr)&0xfff; }
+uint16_t vaddrOffset(const void *vaddr) { return (uint32_t)(vaddr)&0xfff; }
 
 void *toVaddr(uint16_t dirIdx, uint16_t entryIdx, uint16_t offset) {
     uint32_t vaddr = offset;
@@ -71,7 +71,7 @@ void *toVaddr(uint16_t dirIdx, uint16_t entryIdx, uint16_t offset) {
     return (void *)(vaddr);
 }
 
-PageDirectoryEntry *vaddrDirEntry(PageDirectory *directory, void *vaddr) {
+PageDirectoryEntry *vaddrDirEntry(PageDirectory *directory, const void *vaddr) {
     if (directory == NULL)
         directory = getActivePageDir();
 
@@ -79,7 +79,7 @@ PageDirectoryEntry *vaddrDirEntry(PageDirectory *directory, void *vaddr) {
     return &directory->entries[tableidx];
 }
 
-PageTableEntry *vaddrTableEntry(PageDirectory *directory, void *vaddr) {
+PageTableEntry *vaddrTableEntry(PageDirectory *directory, const void *vaddr) {
     // this will never be null (unless something really bad happened)
     PageDirectoryEntry *dirEntry = vaddrDirEntry(directory, vaddr);
     PageTable *table = (PageTable *)((*dirEntry) & ENTRY_ADDR);
@@ -91,7 +91,7 @@ PageTableEntry *vaddrTableEntry(PageDirectory *directory, void *vaddr) {
     return &table->entries[entryidx];
 }
 
-void *vaddrToPaddr(PageDirectory *dir, void *vaddr) {
+void *vaddrToPaddr(PageDirectory *dir, const void *vaddr) {
 
     if (dir == NULL)
         dir = getActivePageDir();

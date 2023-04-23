@@ -50,7 +50,7 @@ bool pageTablePresent(PageDirectoryEntry tableEntry);
 bool pageEntryPresent(PageTableEntry entry);
 
 // sets the entry's physical page to that of addr
-void setEntryAddr(PageTableEntry *entry, void *addr);
+void setEntryAddr(PageTableEntry *entry, const void *addr);
 
 // NOTE: IF PageDirectory* IS NULL IT USES THE CURRENT DIRECTORY (unless
 // otherwise specified)
@@ -73,18 +73,18 @@ void addTableToDirectory(PageDirectory *directory, uint16_t idx,
                          PageTable *table, uint32_t flags);
 
 // translation helpers
-uint16_t vaddrDirectoryIdx(void *vaddr);
-uint16_t vaddrEntryIdx(void *vaddr);
-uint16_t vaddrOffset(void *vaddr);
+uint16_t vaddrDirectoryIdx(const void *vaddr);
+uint16_t vaddrEntryIdx(const void *vaddr);
+uint16_t vaddrOffset(const void *vaddr);
 
 // translates table indexes and offset to virtual address
 void *toVaddr(uint16_t dirIdx, uint16_t tableIdx, uint16_t offset);
 
 // returns the associated directory entry of vaddr, never null
-PageDirectoryEntry *vaddrDirEntry(PageDirectory *directory, void *vaddr);
+PageDirectoryEntry *vaddrDirEntry(PageDirectory *directory, const void *vaddr);
 
 // returns the associated table entry of vaddr, null if invalid/unmapped address
-PageTableEntry *vaddrTableEntry(PageDirectory *directory, void *vaddr);
+PageTableEntry *vaddrTableEntry(PageDirectory *directory, const void *vaddr);
 
 // identity maps the PageTable at directory index idx
 void identityMapTable(PageDirectory *directory, uint16_t idx, uint32_t flags);
@@ -94,7 +94,7 @@ void identityMapTable(PageDirectory *directory, uint16_t idx, uint32_t flags);
  * (according to the current page table/directory)
  * returns NULL when the address is invalid/unmapped
  */
-void *vaddrToPaddr(PageDirectory *dir, void *vaddr);
+void *vaddrToPaddr(PageDirectory *dir, const void *vaddr);
 
 /*
  * enables paging and identity maps the kernel (1st MiB)

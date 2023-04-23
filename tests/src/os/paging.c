@@ -104,6 +104,58 @@ void test_swap_page(PageDirectory *base) {
     serialWrite(COM1, (uint8_t *)(done), sizeof(done) - 1);
 }
 
+void test_modify_in_place(PageDirectory* base) {
+    // steal the 3MiB page and 3 more
+    PageDirectory *newDir = (PageDirectory *)(MiB3);
+    PageTable *tables = (PageTable *)(MiB3 + sizeof(PageDirectory));
+
+    // setup identity paged dir
+    addTableToDirectory(newDir, 0, tables, DEFAULT_ENTRY_FLAGS);
+    addTableToDirectory(newDir, 1, tables + 1, DEFAULT_ENTRY_FLAGS);
+    addTableToDirectory(newDir, 2, tables + 2, DEFAULT_ENTRY_FLAGS);
+
+    identityMapTable(newDir, 0, DEFAULT_ENTRY_FLAGS);
+    identityMapTable(newDir, 1, DEFAULT_ENTRY_FLAGS);
+    identityMapTable(newDir, 2, DEFAULT_ENTRY_FLAGS);
+
+    setActivePageDir(newDir);
+
+    // first and second entry of page table at index 1
+    PageTableEntry *entry1 = vaddrTableEntry(newDir, BOUND);
+    PageTableEntry *entry2 = vaddrTableEntry(newDir, BOUND + PAGE_SIZE);
+    ASSERT(entry1 == &tables[1].entries[0]);
+    ASSERT(entry2 == &tables[1].entries[1]);
+
+    // volatile is extremely important here, or else gcc will optimize our tests to fail
+    volatile uint32_t *baseLocation = (uint32_t *)(BOUND);
+    volatile uint32_t *magicLocation = (uint32_t *)(BOUND + PAGE_SIZE);
+
+    // setup values
+    *baseLocation = 0xdeadbeef;
+    *magicLocation = 123; 
+    ASSERT(*baseLocation == 0xdeadbeef);
+    ASSERT(*magicLocation == 123);
+
+    // map 4th MiB + 1 page to 4th MiB page
+    setEntryAddr(entry2, BOUND);
+    resetTLB(); // ensure change is seen by MMU
+
+    *magicLocation = 0x1337;
+    ASSERT(*baseLocation == 0x1337);
+
+    // map back
+    setEntryAddr(entry2, BOUND + PAGE_SIZE);
+    resetTLB();
+
+    ASSERT(*magicLocation == 123);
+
+    // swap back
+    setActivePageDir(base);
+
+    char done[] = "test_modify_in_place done\n";
+    serialWrite(COM1, (uint8_t *)(done), sizeof(done) - 1);
+}
+
 void test_main() {
     test_composition();
 
@@ -113,4 +165,6 @@ void test_main() {
     test_identity(idDir);
 
     test_swap_page(idDir);
+
+    test_modify_in_place(idDir);
 }
