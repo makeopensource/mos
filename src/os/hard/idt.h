@@ -45,7 +45,17 @@ typedef void (*int_handler_t)(isr_registers_t *);
 void isrSetHandler(uint8_t isr_vec, int_handler_t handler);
 void irqSetHandler(uint8_t irq_vec, int_handler_t handler);
 
-void disableInterrupts(void);
-void enableInterrupts(void);
+typedef enum {
+    InterruptOn,
+    InterruptOff,
+} InterruptState;
+
+// get current state of interrupts
+InterruptState getInterrupts(void);
+
+// returns the previous state
+InterruptState disableInterrupts(void);
+InterruptState enableInterrupts(void);
+InterruptState setInterrupts(InterruptState state);
 
 #endif

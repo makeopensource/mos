@@ -15,11 +15,11 @@ static void timer_handler(isr_registers_t *regs) {
 }
 
 void init_pit() {
-    disableInterrupts();
+    InterruptState iprev = disableInterrupts();
     irqSetHandler(0, timer_handler);
     init_timer(
         100); // 100 hz is just a good general frequency according to the wiki
-    enableInterrupts();
+    setInterrupts(iprev);
 }
 
 void init_timer(int hz) {

@@ -114,6 +114,41 @@ void irqHandler(isr_registers_t *state) {
     ackPIC(state->vec_idx);
 }
 
-void disableInterrupts(void) { __asm__ volatile("cli"); }
+#define INTERRUPT_MASK 0x0200
 
-void enableInterrupts(void) { __asm__ volatile("sti"); }
+InterruptState getInterrupts(void) {
+    uint32_t flags;
+
+    // push flags register then pop into `flags`
+    __asm__ volatile("pushf;"
+                     "pop %0"
+                     : "=g"(flags));
+
+    if (flags & INTERRUPT_MASK) {
+        return InterruptOn;
+    }
+    return InterruptOff;
+}
+
+InterruptState disableInterrupts(void) {
+    InterruptState prev = getInterrupts();
+    __asm__ volatile("cli");
+    return prev;
+}
+
+InterruptState enableInterrupts(void) {
+    InterruptState prev = getInterrupts();
+    __asm__ volatile("sti");
+    return prev;
+}
+
+InterruptState setInterrupts(InterruptState state) {
+    switch (state) {
+    case InterruptOff:
+        return disableInterrupts();
+    case InterruptOn:
+        return enableInterrupts();
+    default:
+        return getInterrupts();
+    }
+}
