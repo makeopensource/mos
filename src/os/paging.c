@@ -2,8 +2,6 @@
 
 #include "stdlib/string.h"
 
-
-
 // room for 3 page tables (12 MiB of mapped memory)
 #define IDENTITY_PT_BASE 0x92000
 #define IDENTITY_PT_LIMIT 0x95000
