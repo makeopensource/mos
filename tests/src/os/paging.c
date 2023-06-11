@@ -11,6 +11,9 @@
 // placed so that the test goes over the table 0 and table 1 boundary
 #define IDENT_LOCATION ((MiB1 * 4) - PAGE_SIZE)
 
+// 4MiB
+#define BOUND ((void *)(MiB1 * 4))
+
 void assert_identity(PageDirectory *dir, void *addr) {
     ASSERT(vaddrToPaddr(dir, addr) == addr);
 }
@@ -48,8 +51,6 @@ void test_composition(void) {
     char done[] = "test_composition done\n";
     serialWrite(COM1, (uint8_t *)(done), sizeof(done) - 1);
 }
-
-#define BOUND ((void *)(MiB1 * 4))
 
 void test_swap_page(PageDirectory *base) {
     // steal the 3MiB page and 3 more

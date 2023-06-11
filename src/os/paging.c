@@ -2,14 +2,7 @@
 
 #include "stdlib/string.h"
 
-/*The page directory and it's tables must be 4KiB aligned (0x1000)
- * 0x90000 is the start of the stack, in other words,
- * the areas from 0x1000 to 0x90000 are in use!
- * But there is a nice open region we can use from 0x91000 - 0x9f000
- * (We technically have until 0x9fc00 before we enter ExBIOS data)
- */
 
-#define ID_PAGE_DIRECTORY_BASE 0x91000
 
 // room for 3 page tables (12 MiB of mapped memory)
 #define IDENTITY_PT_BASE 0x92000
