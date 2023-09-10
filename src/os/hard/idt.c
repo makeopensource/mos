@@ -63,7 +63,7 @@ void makeInterruptTable() {
     initPIC(ISR_COUNT);
 
     // load the IDT and then enable interrupts
-    __asm__ volatile("lidt [%0]" : : "r"(&idtr));
+    __asm__ volatile("lidt (%0)" : : "r"(&idtr));
     enableInterrupts();
 }
 
