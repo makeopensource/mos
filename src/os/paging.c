@@ -13,7 +13,10 @@ bool pageTablePresent(PageDirectoryEntry tableEntry) {
     return tableEntry & ENTRY_PRESENT;
 }
 
-bool pageEntryPresent(PageTableEntry entry) { return entry & ENTRY_PRESENT; }
+bool pageEntryPresent(PageTableEntry entry) {
+    // mask out all but first bit
+    return entry & ENTRY_PRESENT;
+}
 
 void setEntryAddr(PageTableEntry *entry, const void *addr) {
     if (entry == NULL)
