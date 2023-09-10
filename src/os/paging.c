@@ -37,7 +37,10 @@ PageDirectory *getActivePageDir(void) {
     return dir;
 }
 
-void resetTLB(void) { setActivePageDir(getActivePageDir()); }
+void resetTLB(void) {
+    // setting the active directory to the current updates the TLB
+    setActivePageDir(getActivePageDir());
+}
 
 #define PAGE_TABLE_OFFSET 22
 #define PAGE_ENTRY_OFFSET 12
@@ -49,11 +52,15 @@ uint16_t vaddrDirectoryIdx(const void *vaddr) {
 
 // middle 10 bits
 uint16_t vaddrEntryIdx(const void *vaddr) {
-    return ((uint32_t)(vaddr) >> PAGE_ENTRY_OFFSET) & 0b1111111111;
+    // shifted right 12 then 10-bit mask
+    return ((uint32_t)(vaddr) >> PAGE_ENTRY_OFFSET) & 0x3ff;
 }
 
 // low 12 bits
-uint16_t vaddrOffset(const void *vaddr) { return (uint32_t)(vaddr)&0xfff; }
+uint16_t vaddrOffset(const void *vaddr) {
+    // 12-bit mask
+    return (uint32_t)(vaddr)&0xfff;
+}
 
 void *toVaddr(uint16_t dirIdx, uint16_t entryIdx, uint16_t offset) {
     uint32_t vaddr = offset;
