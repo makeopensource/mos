@@ -29,13 +29,13 @@ void setActivePageDir(PageDirectory *dir) {
     if (dir == NULL)
         dir = idendirectory;
 
-    __asm__ volatile("mov cr3, %0" : : "a"(dir));
+    __asm__ volatile("mov %0, %%cr3" : : "a"(dir));
 }
 
 PageDirectory *getActivePageDir(void) {
     PageDirectory *dir = NULL;
 
-    __asm__ volatile("mov %0, cr3" : "=r"(dir));
+    __asm__ volatile("mov %%cr3, %0" : "=r"(dir));
 
     return dir;
 }
@@ -148,7 +148,7 @@ void initPaging(void) {
     setActivePageDir(idendirectory);
 
     // enable paging flags in cr0
-    __asm__ volatile("mov eax, cr0\n\t"
-                     "or eax, 0x80000001\n\t"
-                     "mov cr0, eax");
+    __asm__ volatile("mov %cr0, %eax \n\t"
+                     "or $0x80000001, %eax\n\t"
+                     "mov %eax, %cr0");
 }
