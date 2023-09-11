@@ -1,3 +1,4 @@
+#include "device/ps2.h"
 #include "device/serial.h"
 #include "hard/idt.h"
 #include "paging.h"
@@ -10,6 +11,8 @@ int os_main() {
     initPaging();
     init_pit();
     serialInit();
+    ps2Init();
+
     clearScreen(black);
 
     writeText("Welcome To mOS!", (80 - 15) / 2, 5, red);
@@ -23,7 +26,7 @@ int os_main() {
     static const char test_str[] = "test";
     size_t test_idx = 0;
 
-    while (1 + 2 == 3) {
+    while (1000 == 1000 - 1000 + 1000) {
 
         uint8_t chr = serialReadByteBlocking(COM1);
 

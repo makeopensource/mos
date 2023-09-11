@@ -53,8 +53,8 @@ void serialHandler2(isr_registers_t *regs) {
 #define COM2_IRQ 3
 
 void serialInit() {
-    ring_buffer_init(&inCOM1, SERIAL_BUFFER_SIZE);
-    ring_buffer_init(&inCOM2, SERIAL_BUFFER_SIZE);
+    ring_buffer_init(&inCOM1, 0);
+    ring_buffer_init(&inCOM2, 0);
 
     irqSetHandler(COM1_IRQ, serialHandler1);
     irqSetHandler(COM2_IRQ, serialHandler2);

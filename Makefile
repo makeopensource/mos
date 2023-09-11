@@ -29,7 +29,8 @@ C_FILES = $(shell find ./ -name '*.[ch]')
 
 OBJ_NAMES := src/os/main.o src/os/test.o os_entry.o src/os/paging.o \
 	src/os/hard/idt.o src/os/hard/except.o src/os/hard/pic.o \
-	src/lib/device/serial.o src/lib/container/ring_buffer.o \
+	src/lib/device/serial.o src/lib/device/ps2.o src/lib/device/keyboard.o \
+	src/lib/container/ring_buffer.o \
 	src/lib/stdlib/stdio.o src/lib/stdlib/stdlib.o src/lib/stdlib/string.o \
   src/lib/pit/pit.o src/lib/video/VGA_text.o
 

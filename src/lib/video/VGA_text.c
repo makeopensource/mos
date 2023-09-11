@@ -1,5 +1,7 @@
 #include "VGA_text.h"
 
+#include "../../os/hard/port_io.h"
+
 VGA_Char *cursor = VGA_MEMORY;
 
 VGA_Char getVGAchar(unsigned char chr, VGA_Color foreground,
@@ -25,8 +27,22 @@ void writeText(const char *str, int x, int y, VGA_Color color) {
     }
 }
 
+void updateCursorPos(void) {
+
+    // evil (but useful) pointer arithmetic
+    uint16_t pos = (cursor - VGA_MEMORY);
+
+    // low (mostly x but some y too)
+    outb(0x3D4, 0x0F);
+    outb(0x3D5, (uint8_t)(pos & 0xFF));
+
+    // high (only y)
+    outb(0x3D4, 0x0E);
+    outb(0x3D5, (uint8_t)((pos >> 8) & 0xFF));
+}
+
 // checks and fixes the cursor, may do nothing
-void adjustCursor() {
+void adjustCursor(void) {
     if (cursor < VGA_MEMORY) {
         cursor = VGA_MEMORY;
     } else if (cursor >= VGA_END) {
@@ -35,6 +51,7 @@ void adjustCursor() {
         // set cursor to start of last line
         cursor = VGA_MEMORY + VGA_SIZE - VGA_WIDTH;
     }
+    updateCursorPos();
 }
 
 void print(const char *str, VGA_Color color) {
@@ -79,7 +96,7 @@ void scroll() {
 }
 
 void clearScreen(VGA_Color color) {
-    VGA_Char clearChr = getVGAchar(' ', black, color);
+    VGA_Char clearChr = getVGAchar(' ', white, color);
 
     clearScreenC(clearChr);
 }
@@ -89,4 +106,5 @@ void clearScreenC(VGA_Char character) {
         VGA_MEMORY[i] = character;
     }
     cursor = VGA_MEMORY; // reset cursor
+    adjustCursor();
 }
