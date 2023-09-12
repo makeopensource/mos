@@ -56,6 +56,10 @@ You will need to ensure that these programs are on your PATH or `make` will not 
 
 * run `make qemu` in the root directory of the project
 
+### Running in DEBUG mode
+
+* run `make qemu DEBUG=true` in the root directory of the project
+
 ### Formatting
 
 * run `make format` in the root directory of the project to format the code

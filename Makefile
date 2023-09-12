@@ -1,4 +1,5 @@
 PLATFORM := $(shell uname)
+DEBUG ?= false # lowers optimization levels and increases command verbosity
 
 ifeq ($(PLATFORM), Darwin) 
 CC := i386-elf-gcc
@@ -10,13 +11,26 @@ LD := ld
 OBJCOPY := objcopy
 endif
 
+ifeq ($(DEBUG), true)
+DEBUG_CFLAGS := -g3 -O0
+DEBUG_NASM_FLAGS := -O0
+DEBUG_QEMU_FLAGS := -monitor stdio
+else
+DEBUG_CFLAGS := -Os
+DEBUG_NASM_FLAGS := -Ox
+DEBUG_QEMU_FLAGS :=
+endif
+
 QEMU_GDB_TIMEOUT ?= 10 # num. seconds to wait for qemu to start OS
 
 export CC
 export LD
 export OBJCOPY
+export DEBUG_CFLAGS
+export DEBUG_NASM_FLAGS
+export DEBUG_QEMU_FLAGS
 
-export CFLAGS := -Wall -Werror -g3 -Os -Wl,--oformat=binary -no-pie -m32 -s -falign-functions=4 -ffreestanding -fno-asynchronous-unwind-tables
+export CFLAGS := -Wall -Werror $(DEBUG_CFLAGS) -Wl,--oformat=binary -no-pie -m32 -s -falign-functions=4 -ffreestanding -fno-asynchronous-unwind-tables
 export LFLAGS := -melf_i386 --build-id=none
 
 ASM_BOOT_SECT_SOURCE := ./src/boot/boot_sect.asm
@@ -43,31 +57,36 @@ $(OS_BIN): $(OBJ_NAMES) $(BOOT_OBJ)
 	cat $(BOOT_OBJ) intermediate.bin > $(OS_BIN)
 
 $(BOOT_OBJ): $(ASM_BOOT_SECT_SOURCE)
-	nasm $^ -f bin -o $@
+	nasm $^ -f bin -o $@ $(DEBUG_NASM_FLAGS)
 
 os_entry.o: $(ASM_OS_ENTRY_SOURCE)
-	nasm $^ -f elf32 -g -o $@
+	nasm $^ -f elf32 -o $@ $(DEBUG_NASM_FLAGS)
 
 %.o: %.c
 	$(CC) -c $^ -o $@ $(CFLAGS) -I./src/lib/
 
 %.o: %.asm
-	nasm $^ -f elf32 -g -o $@
+	nasm $^ -f elf32 -o $@ $(DEBUG_NASM_FLAGS)
 
 qemu: $(OS_BIN)
-	qemu-system-i386 -boot c -drive format=raw,file=$^ -no-reboot -no-shutdown
+	qemu-system-i386 $(DEBUG_QEMU_FLAGS) -boot c -drive format=raw,file=$^ -no-reboot -no-shutdown
 
 qemu-gdb: $(OS_BIN)
-	qemu-system-i386 -s -S -boot c -drive format=raw,file=$^ -no-reboot -no-shutdown &
+	qemu-system-i386 $(DEBUG_QEMU_FLAGS) -s -S -boot c -drive format=raw,file=$^ \
+		-no-reboot -no-shutdown &
 	gdb mOS.elf \
+		-q \
 		-ex 'set remotetimeout $(QEMU_GDB_TIMEOUT)' \
 		-ex 'target remote localhost:1234' \
 		-ex 'break os_main' \
 		-ex 'continue'
 
 qemu-gdb-boot: $(OS_BIN)
-	qemu-system-i386 -s -S -boot c -drive format=raw,file=$^ -no-reboot -no-shutdown &
-	gdb -ix gdb_init_real_mode.txt mOS.elf \
+	qemu-system-i386 $(DEBUG_QEMU_FLAGS) -s -S -boot c -drive format=raw,file=$^ \
+		-no-reboot -no-shutdown &
+	gdb mOS.elf \
+		-q \
+		-ix gdb_init_real_mode.txt \
 		-ex 'set remotetimeout $(QEMU_GDB_TIMEOUT)' \
 		-ex 'target remote localhost:1234' \
 		-ex 'break *0x7c00' \
