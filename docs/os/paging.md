@@ -26,7 +26,7 @@ A virtual address is comprised of 3 parts, a table index, a entry index, and an 
 
 The following diagram shows a decomposition. The construction of a physical address requires having a page directory populated with tables.
 
-[Decomposition](vaddr_decomp.png)
+![Decomposition](vaddr_decomp.png)
 
 ### Mappings
 

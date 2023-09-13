@@ -7,6 +7,8 @@
 #define IDENTITY_PT_LIMIT 0x95000
 #define TABLE_COUNT ((IDENTITY_PT_LIMIT - IDENTITY_PT_BASE) / 0x1000)
 
+#define MiB4 0x400000
+
 PageDirectory *idendirectory = (PageDirectory *)(ID_PAGE_DIRECTORY_BASE);
 
 bool pageTablePresent(PageDirectoryEntry tableEntry) {
@@ -114,7 +116,7 @@ void identityMapTable(PageDirectory *directory, uint16_t idx, uint32_t flags) {
 
     // 4GiB per directory
     // 4MiB per table
-    uint32_t baseAddr = idx * 0x400000;
+    uint32_t baseAddr = idx * MiB4;
 
     for (uint32_t page_idx = 0; page_idx < PAGE_ENTRY_COUNT; ++page_idx) {
         PageTableEntry entry = flags & ~(ENTRY_ADDR);
