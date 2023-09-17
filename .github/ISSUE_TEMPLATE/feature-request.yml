@@ -1,0 +1,44 @@
+name: 🆕 Feature Request ✨
+description: File a request for a new feature or enhancement! ✨
+title: "[Feature]: <title-here>"
+body:
+- type: markdown
+  attributes:
+    value: |
+      Thanks for taking the time to fill out this feature request! :)
+- type: checkboxes
+  attributes:
+    label: Is there an existing issue for this?
+    description: Please search to see if an issue already exists for the feature you'd like to request. :)
+    options:
+    - label: I have searched the existing issues
+      required: true
+- type: dropdown
+  attributes:
+    label: Is this a new feature or an enhancement?
+    description: Please indicate whether this is a new feature you'd like to see, or an improvement to an existing feature.
+    options:
+    - New Feature
+    - Enhancement
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Feature Description
+    description: Please write a description of the feature or enhancement you'd like to be implemented.
+  validations:
+    required: true
+- type: textarea
+  id: solutions
+  attributes:
+    label: Implementation Notes
+    description: If you may not be implementing this yourself, please share any implementation notes you might have. These could include links to relevant readings/libraries, potential pitfalls, or an actualizable plan.
+  validations:
+    required: false
+- type: checkboxes
+  attributes:
+    label: Labels/Assignees
+    description: Please select appropriate labels and/or assignees.
+    options:
+    - label: I have selected any appropriate labels and/or assignees.
+      required: true

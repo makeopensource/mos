@@ -1,0 +1,53 @@
+name: 🐞 Bug Report 🐞
+description: File a bug report
+title: "[Bug]: <title-here>"
+labels: ["Bug"]
+body:
+- type: markdown
+  attributes:
+    value: |
+      Thanks for taking the time to fill out this bug report! :)
+- type: checkboxes
+  attributes:
+    label: Is there an existing issue for this?
+    description: Please search to see if an issue already exists for the bug you encountered.
+    options:
+    - label: I have searched the existing issues
+      required: true
+- type: textarea
+  attributes:
+    label: Current Behavior
+    description: A concise description of what you're experiencing.
+  validations:
+    required: false
+- type: textarea
+  attributes:
+    label: Expected Behavior
+    description: A concise description of what you expected to happen.
+  validations:
+    required: false
+- type: dropdown
+  id: OS
+  attributes:
+    label: Operating System
+    description: What operating system are you using?
+    options:
+      - Windows
+      - Linux
+      - MacOS (Intel)
+      - MacOS (M1)
+      - Other (I will specify)
+    default: 0
+  validations:
+    required: true
+- type: textarea
+  id: solutions
+  attributes:
+    label: Further Info
+    description: If you have any thoughts on what could be causing the bug, potential solutions or any other pertinent information, please share them here.
+- type: textarea
+  id: logs
+  attributes:
+    label: Relevant log output
+    description: If you have any, please paste relevant log/debug info as is (will be automatically formatted).
+    render: shell
