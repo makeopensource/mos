@@ -2,9 +2,9 @@ PLATFORM := $(shell uname)
 DEBUG ?= false # lowers optimization levels and increases command verbosity
 
 ifeq ($(PLATFORM), Darwin) 
-CC := i386-elf-gcc
-LD := i386-elf-ld
-OBJCOPY := gobjcopy
+CC := x86_64-elf-gcc
+LD := x86_64-elf-ld
+OBJCOPY := x86_64-elf-objcopy
 else
 CC := gcc
 LD := ld
@@ -30,7 +30,9 @@ export DEBUG_CFLAGS
 export DEBUG_NASM_FLAGS
 export DEBUG_QEMU_FLAGS
 
-export CFLAGS := -Wall -Werror $(DEBUG_CFLAGS) -Wl,--oformat=binary -no-pie -m32 -s -falign-functions=4 -ffreestanding -fno-asynchronous-unwind-tables
+export CFLAGS := -Wall -Werror $(DEBUG_CFLAGS) -Wl,--oformat=binary -no-pie -m32 -mno-mmx -mno-sse -mno-sse2 -mno-sse3 \
+					-s -falign-functions=4 -ffreestanding -fno-asynchronous-unwind-tables
+
 export LFLAGS := -melf_i386 --build-id=none
 
 ASM_BOOT_SECT_SOURCE := ./src/boot/boot_sect.asm
