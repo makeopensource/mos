@@ -5,11 +5,12 @@
 
 #define MAX_SNPRINTF_STRING 100
 
-int snprintf(char *restrict buffer, size_t bufsz, char *format, ...);
-int vsnprintf(char *restrict buffer, size_t bufsz, char *format, va_list ap);
+int snprintf(char *restrict buffer, size_t bufsz, const char *format, ...);
+int vsnprintf(char *restrict buffer, size_t bufsz, const char *format,
+              va_list ap);
 
 // Inspired by chapter 7.3 of The C Programming Language
-int snprintf(char *restrict buffer, size_t bufsz, char *format, ...) {
+int snprintf(char *restrict buffer, size_t bufsz, const char *format, ...) {
     va_list ap;
     int retval;
     va_start(ap, format);
@@ -19,8 +20,9 @@ int snprintf(char *restrict buffer, size_t bufsz, char *format, ...) {
     return retval;
 }
 
-int vsnprintf(char *restrict buffer, size_t bufsz, char *format, va_list ap) {
-    char *p;
+int vsnprintf(char *restrict buffer, size_t bufsz, const char *format,
+              va_list ap) {
+    const char *p;
 
     // valid types
     unsigned char c; // printf("%c\n", 'c');
@@ -54,6 +56,7 @@ int vsnprintf(char *restrict buffer, size_t bufsz, char *format, va_list ap) {
                 if (len + n + 1 < bufsz) {
                     memcpy(buffer, s, len);
                     buffer += len;
+                    n += len - 1;
                 } else {
                     return n;
                 }
@@ -75,19 +78,22 @@ int vsnprintf(char *restrict buffer, size_t bufsz, char *format, va_list ap) {
             case 'i':
                 i = va_arg(ap, int);
                 int temp = i;
-                int bufSize = 0;
+                len = 0;
                 if (i < 0) {
-                    bufSize++;
+                    len++;
                     temp *= -1;
                 }
-                for (; temp >= 1; temp = temp / 10, bufSize++)
+                for (; temp >= 1; temp = temp / 10, len++)
                     ;
+                if (i == 0)
+                    len++;
 
                 // checks if there is space for the entire string
                 // plus the null-terminating byte
-                if (bufSize + n + 1 < bufsz) {
+                if (len + n + 1 < bufsz) {
                     itoa_s(i, buffer, MAX_SNPRINTF_STRING - n);
-                    buffer += bufSize;
+                    buffer += len;
+                    n += len - 1;
                 } else {
                     return n;
                 }

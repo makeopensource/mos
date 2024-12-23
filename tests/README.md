@@ -36,3 +36,4 @@ The `.expect` file consists of all the output the `.c` file will produce when ev
 Testing requires the same dependencies as normal operation along with the following:
 
 * Python 3.8
+  * Python venv

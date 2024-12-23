@@ -69,6 +69,8 @@ struct PS2Buf_t {
 int ps2Init();
 const struct PS2Device *getPortType(int portnum);
 
+void vgaEditor(struct PS2Buf_t out);
+
 bool ps2Present(void);
 bool ps2Port1Present(void);
 bool ps2Port2Present(void);

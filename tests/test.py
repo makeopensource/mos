@@ -7,6 +7,10 @@ import errno
 import shutil
 import sys
 
+from termcolor import cprint
+from colorama import just_fix_windows_console
+
+just_fix_windows_console()
 
 BASE_PORT = 1111
 MAX_PORT = 1234
@@ -112,6 +116,7 @@ class TestInstance:
             self._qemu = subprocess.Popen(command, stdin=subprocess.PIPE, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
             time.sleep(1) #give qemu some time to open
             self._ready = True
+        cprint(self.bin_path.name + " has started.", "green")
 
     def beginTest(self):
         self.test = Thread(target=test, args=[self])
@@ -131,15 +136,18 @@ class TestInstance:
             if (self._qemu != None and self._qemu.poll() == None):
                 try:
                     # send the exit command to QEMU
-                    self._qemu.communicate(b"\x01x", 5)
+                    self._qemu.terminate()
                     self._qemu.wait(10)
 
                 except:
                     # force qemu to quit since it refuses to exit normally
+                    cprint(self.bin_path.name + " was forcefully closed.", "red", attrs=["bold"])
                     self._qemu.kill()
+                    self._qemu.wait(5)
 
                 self._qemu = None
                 self._ready = False
+                cprint(self.bin_path.name + " has exited.", "cyan")
                 os.remove(self._qemu_file)
 
     def end(self):
@@ -269,7 +277,7 @@ def test(instance: TestInstance):
             return test_end_stub(instance, passed)
 
         except socket.timeout:
-            print("test timed out")
+            cprint(instance.bin_path.name + " | test timed out", "red")
 
         except socket.error as e:
 
@@ -288,8 +296,12 @@ def test(instance: TestInstance):
 
 
 def create_instance(bin_path, expected_path):
-    while (active_instances > MAX_INSTANCES):
-        time.sleep(0.5)
+    while (True):
+        with instance_mutex:
+            if(active_instances >= MAX_INSTANCES):
+                time.sleep(0.5)
+            else:
+                break
 
     instance = TestInstance(get_port(), bin_path, expected_path)
     instance.start()
@@ -348,7 +360,7 @@ def do_tests():
     for instance in instances:
         instance.end()
 
-    print("All tests completed in " + str(time.time() - start) + "seconds")
+    print("All tests completed in " + str(time.time() - start) + " seconds")
     total_fail = 0
     total_pass = 0
 
@@ -356,10 +368,10 @@ def do_tests():
         result = instance.result
         if (result):
             total_pass += 1
-            print(instance.bin_path.name + " PASSED")
+            cprint(instance.bin_path.name + " PASSED", "light_green")
         else:
             total_fail += 1
-            print(instance.bin_path.name + " FAILED")
+            cprint(instance.bin_path.name + " FAILED", "red", attrs=["bold"])
 
     print("Summary: PASSED-{}, FAILED-{}, TOTAL-{}"
         .format(total_pass, total_fail, len(instances)))

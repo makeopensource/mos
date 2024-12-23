@@ -1,7 +1,7 @@
 #include "container/ring_buffer.h"
 
-#include "../../test_helper.h"
 #include "device/serial.h"
+#include "test_helper.h"
 
 #define RB_SIZE 32
 typedef ring_buffer(RB_SIZE) ring_buffer_byte_t;

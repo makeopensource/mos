@@ -3,6 +3,7 @@
 #include "../../os/hard/idt.h"
 #include "../../os/hard/port_io.h"
 #include "container/ring_buffer.h"
+#include "key_handlers.h"
 
 #define PS2_BUF_SIZE 64
 #define PS2_TIMEOUT 100000
@@ -72,6 +73,29 @@ const struct PS2Device *getPortType(int portnum) {
 // temporary include for #7
 #include "video/VGA_text.h"
 
+void vgaEditor(struct PS2Buf_t out) {
+    switch (out.keyEvent.code) {
+    case Key_backspace:
+    case Key_delete:
+    case Key_left:
+    case Key_down:
+    case Key_up:
+    case Key_right:
+        specialHandler(out.keyEvent);
+        break;
+    default:
+        char buf[2] = " ";
+        buf[0] = keyPressToASCII(out.keyEvent);
+        if (buf[0] != 0) {
+            if (getCursor()->highlight_offset) {
+                highlightDeletePrev(getCursor()->highlight_offset);
+                getCursor()->highlight_offset = 0;
+            }
+            print(buf, white);
+        }
+    }
+}
+
 void ps2HandlerPort1(isr_registers_t *regs) {
     uint8_t b = inb(PS2_DATA);
 
@@ -86,9 +110,7 @@ void ps2HandlerPort1(isr_registers_t *regs) {
 
         // temporary to satisfy exactly what issue #7 says
         if (out.keyEvent.code != Key_none && out.keyEvent.event == KeyPressed) {
-            char buf[2] = " ";
-            buf[0] = keyPressToASCII(out.keyEvent);
-            print(buf, white);
+            vgaEditor(out);
         }
     }
 }

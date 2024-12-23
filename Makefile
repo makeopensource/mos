@@ -52,7 +52,7 @@ OBJ_NAMES := src/os/main.o src/os/test.o os_entry.o src/lib/video/VGA_text.o \
 	src/lib/device/serial.o src/lib/device/ps2.o src/lib/device/keyboard.o \
 	src/lib/container/ring_buffer.o \
 	src/lib/stdlib/stdio.o src/lib/stdlib/stdlib.o src/lib/stdlib/string.o \
-  src/lib/pit/pit.o
+	src/lib/pit/pit.o src/lib/device/key_handlers.o
 
 
 .PHONY: clean qemu test
